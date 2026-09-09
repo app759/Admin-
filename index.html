@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PromptVault — Admin Control Center</title>
+
+  <!-- Google Fonts: Poppins & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Firebase SDKs (v9 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ============================================================
+       ADMIN DESIGN SYSTEM & CSS VARIABLES
+       Style: Clean Soft 3D Glassmorphism, Teal & Peach Accents
+       ============================================================ */
+    :root {
+      --primary-teal: #0d9488;
+      --primary-cyan: #06b6d4;
+      --primary-gradient: linear-gradient(135deg, #06b6d4 0%, #0d9488 100%);
+      --accent-coral: #ff7b72;
+      --accent-peach: #ff9a8b;
+      --peach-gradient: linear-gradient(135deg, #ff9a8b 0%, #ff6a88 100%);
+      --glass-panel: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(226, 232, 240, 0.8);
+      --soft-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      --bg-page: #f8fafc;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --font-heading: 'Poppins', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-page);
+      background-image: 
+        radial-gradient(circle at 5% 5%, rgba(6, 182, 212, 0.06) 0%, transparent 35%),
+        radial-gradient(circle at 95% 95%, rgba(255, 154, 139, 0.06) 0%, transparent 40%);
+      color: var(--text-dark);
+      min-height: 100vh;
+      font-size: 14.5px;
+      overflow-x: hidden;
+    }
+
+    /* Container */
+    .admin-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      letter-spacing: -0.3px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-heading);
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(6, 182, 212, 0.3);
+    }
+    .btn-peach {
+      background: var(--peach-gradient);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(255, 122, 114, 0.3);
+    }
+    .btn-outline {
+      background: #ffffff;
+      color: var(--text-dark);
+      border: 1.5px solid #e2e8f0;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12.5px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Inputs */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      font-size: 14.5px;
+      color: var(--text-dark);
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--primary-cyan);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.12);
+    }
+    /* EXACT UNALTERED CONTENT TEXTAREA */
+    .form-textarea.exact-code-area {
+      font-family: 'Inter', monospace, sans-serif;
+      min-height: 180px;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+
+    /* Views */
+    .admin-view {
+      display: none;
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+    .admin-view.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .admin-card {
+      background: var(--glass-panel);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--soft-shadow);
+      margin-bottom: 20px;
+    }
+
+    /* Admin Top Navigation */
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .admin-brand-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+      box-shadow: 0 8px 16px rgba(6, 182, 212, 0.25);
+    }
+    .admin-nav-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 20px;
+    }
+    .admin-tab-btn {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .admin-tab-btn.active {
+      background: var(--primary-teal);
+      border-color: var(--primary-teal);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .stat-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .stat-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    /* Prompt List Items */
+    .prompt-table-item {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    @media (min-width: 640px) {
+      .prompt-table-item {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+    .prompt-item-info {
+      flex: 1;
+    }
+    .prompt-item-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+    .prompt-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .status-badge {
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-published {
+      background: #ccfbf1;
+      color: #0f766e;
+    }
+    .status-draft {
+      background: #fef3c7;
+      color: #b45309;
+    }
+    .prompt-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Toast */
+    .admin-toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .admin-toast {
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      animation: fadeIn 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-toast.success { background: #0d9488; }
+    .admin-toast.error { background: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div id="toastContainer" class="admin-toast-container"></div>
+
+    <!-- ============================================================
+         ADMIN LOGIN VIEW
+         ============================================================ -->
+    <div id="adminLoginView" class="admin-view active">
+      <div style="max-width: 400px; margin: 80px auto; text-align: center;">
+        <div class="admin-brand-icon" style="margin: 0 auto 16px; width: 64px; height: 64px; font-size: 28px;">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Admin Authentication</h2>
+        <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 28px;">Sign in with your administrator Firebase account</p>
+
+        <div class="admin-card" style="text-align: left;">
+          <form onsubmit="handleAdminLogin(event)">
+            <div class="form-group">
+              <label class="form-label">Admin Email</label>
+              <input type="email" id="adminEmail" class="form-input" placeholder="admin@domain.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <div style="position: relative;">
+                <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required />
+                <i class="fa-solid fa-eye" id="adminEye" style="position: absolute; right: 14px; top: 15px; cursor: pointer; color: var(--text-light);" onclick="toggleAdminPassword()"></i>
+              </div>
+            </div>
+            <button type="submit" id="adminLoginBtn" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+              <i class="fa-solid fa-lock"></i>
+              <span>Access Control Center</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         ADMIN AUTHENTICATED PANEL
+         ============================================================ -->
+    <div id="adminMainView" class="admin-view">
+      <!-- Header -->
+      <div class="admin-header">
+        <div class="admin-brand">
+          <div class="admin-brand-icon">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800; line-height: 1.2;">PromptVault Admin</h2>
+            <p id="adminUserBadge" style="font-size: 12px; color: var(--primary-teal); font-weight: 600;">Authorized Administrator</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="user.html" target="_blank" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>Open Store</span>
+          </a>
+          <button class="btn btn-peach btn-sm" onclick="handleAdminLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="admin-nav-tabs">
+        <button class="admin-tab-btn active" id="tabBtnDashboard" onclick="switchAdminTab('dashboard')">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="admin-tab-btn" id="tabBtnManagePrompts" onclick="switchAdminTab('managePrompts')">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Prompts</span>
+        </button>
+        <button class="admin-tab-btn" id="tabBtnAddPrompt" onclick="switchAdminTab('addPrompt')">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add New Prompt</span>
+        </button>
+        <button class="admin-tab-btn" id="tabBtnCategories" onclick="switchAdminTab('categories')">
+          <i class="fa-solid fa-tags"></i>
+          <span>Categories</span>
+        </button>
+      </div>
+
+      <!-- ============================================================
+           TAB 1: DASHBOARD OVERVIEW
+           ============================================================ -->
+      <div id="sectionDashboard" class="admin-tab-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background: #e0f2fe; color: #0284c7;">
+              <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="statTotalPrompts">0</div>
+              <div class="stat-label">Total Prompts</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background: #ccfbf1; color: #0f766e;">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="statPublishedPrompts">0</div>
+              <div class="stat-label">Published</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background: #fef3c7; color: #b45309;">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="statDraftPrompts">0</div>
+              <div class="stat-label">Drafts</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background: #fce7f3; color: #db2777;">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="statTotalCategories">0</div>
+              <div class="stat-label">Categories</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Recent Stream -->
+        <div class="admin-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 700;">Recently Added Prompts</h3>
+            <button class="btn btn-primary btn-sm" onclick="switchAdminTab('addPrompt')">
+              <i class="fa-solid fa-plus"></i> Add Prompt
+            </button>
+          </div>
+          <div id="dashboardRecentList"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           TAB 2: PROMPT MANAGEMENT & LIVE SEARCH
+           ============================================================ -->
+      <div id="sectionManagePrompts" class="admin-tab-content" style="display: none;">
+        <div class="admin-card">
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <input type="text" id="adminPromptSearch" class="form-input" style="flex: 1; min-width: 200px;" placeholder="Search by title, exact content, description, tags..." oninput="handleAdminPromptSearch(this.value)" />
+              <select id="adminStatusFilter" class="form-select" style="width: 160px;" onchange="handleAdminPromptSearch(document.getElementById('adminPromptSearch').value)">
+                <option value="all">All Statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Drafts</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="adminPromptsListContainer">
+            <!-- Dynamic Prompt Items will load here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           TAB 3: ADD / EDIT PROMPT FORM
+           ============================================================ -->
+      <div id="sectionAddPrompt" class="admin-tab-content" style="display: none;">
+        <div class="admin-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="promptFormTitle" style="font-size: 18px; font-weight: 700;">Add New AI Prompt</h3>
+            <button id="cancelEditBtn" class="btn btn-outline btn-sm" style="display: none;" onclick="resetPromptForm()">
+              <i class="fa-solid fa-xmark"></i> Cancel Edit
+            </button>
+          </div>
+
+          <form id="promptEditorForm" onsubmit="handlePromptFormSave(event)">
+            <input type="hidden" id="editPromptId" value="" />
+
+            <!-- Title -->
+            <div class="form-group">
+              <label class="form-label">Prompt Title *</label>
+              <input type="text" id="promptTitleInput" class="form-input" placeholder="e.g. Master Copywriting Framework for High-Converting Landing Pages" required />
+            </div>
+
+            <!-- CRITICAL EXACT UNALTERED PROMPT CONTENT -->
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" style="margin-bottom: 0;">Complete Prompt Content * <span style="color: var(--primary-teal); font-size: 12px;">(Exact Storage Guaranteed)</span></label>
+                <span style="font-size: 12px; color: var(--text-muted);"><i class="fa-solid fa-lock" style="margin-right: 3px;"></i> No AI rewrites or alterations</span>
+              </div>
+              <!-- Textarea preserves all formatting, spaces, linebreaks exactly as entered -->
+              <textarea id="promptContentInput" class="form-textarea exact-code-area" placeholder="Paste the exact prompt content here..." required></textarea>
+            </div>
+
+            <!-- Short Description -->
+            <div class="form-group">
+              <label class="form-label">Short Description</label>
+              <textarea id="promptDescInput" class="form-textarea" style="min-height: 80px;" placeholder="Summarize what this prompt produces and instructions for users..."></textarea>
+            </div>
+
+            <!-- Category & External Image -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+              <div class="form-group">
+                <label class="form-label">Category *</label>
+                <select id="promptCategorySelect" class="form-select" required>
+                  <!-- Populated from DB + defaults -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">External Image URL (Optional)</label>
+                <input type="url" id="promptImageUrlInput" class="form-input" placeholder="https://images.unsplash.com/photo-..." />
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group">
+              <label class="form-label">Tags (comma-separated)</label>
+              <input type="text" id="promptTagsInput" class="form-input" placeholder="chatgpt, marketing, seo, business" />
+            </div>
+
+            <!-- Status & Action Buttons -->
+            <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
+              <button type="submit" name="statusAction" value="published" class="btn btn-primary" style="flex: 1;">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span id="savePublishBtnText">Publish to Store</span>
+              </button>
+              <button type="submit" name="statusAction" value="draft" class="btn btn-outline" style="flex: 1;">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Save as Draft</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           TAB 4: CATEGORY MANAGEMENT
+           ============================================================ -->
+      <div id="sectionCategories" class="admin-tab-content" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+          <!-- Add Category Card -->
+          <div class="admin-card">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Create New Category</h3>
+            <form onsubmit="handleCreateCategory(event)">
+              <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <input type="text" id="newCategoryName" class="form-input" placeholder="e.g. Midjourney Art" required />
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-plus"></i> Add Category
+              </button>
+            </form>
+          </div>
+
+          <!-- Existing Categories Card -->
+          <div class="admin-card">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Active Categories</h3>
+            <div id="adminCategoriesList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       ADMIN APPLICATION LOGIC
+       ============================================================ -->
+  <script>
+    /* Firebase Configuration */
+    const firebaseConfig = {
+  apiKey: "AIzaSyBsSflWt9YuB4OjvZjj-5w0vJSw5peKGBA",
+  authDomain: "promte-11099.firebaseapp.com",
+  databaseURL: "https://promte-11099-default-rtdb.firebaseio.com",
+  projectId: "promte-11099",
+  storageBucket: "promte-11099.firebasestorage.app",
+  messagingSenderId: "343407185003",
+  appId: "1:343407185003:web:45fbecc24c6d57f8d9b52e"
+};
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    /* State Variables */
+    let currentAdmin = null;
+    let adminPrompts = [];
+    let adminCategories = {};
+    let promptSearchFilter = '';
+
+    const defaultPresetCategories = [
+      "ChatGPT", "Gemini", "AI Writing", "Image Generation", 
+      "Coding", "YouTube", "SEO", "Marketing", "Business", "Other"
+    ];
+
+    /* Toast Utility */
+    function showAdminToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `admin-toast ${type}`;
+      let icon = 'fa-circle-info';
+      if (type === 'success') icon = 'fa-circle-check';
+      if (type === 'error') icon = 'fa-triangle-exclamation';
+
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    /* ============================================================
+       ADMIN AUTHENTICATION
+       ============================================================ */
+    function toggleAdminPassword() {
+      const input = document.getElementById('adminPassword');
+      const eye = document.getElementById('adminEye');
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.classList.remove('fa-eye');
+        eye.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        eye.classList.remove('fa-eye-slash');
+        eye.classList.add('fa-eye');
+      }
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+      const btn = document.getElementById('adminLoginBtn');
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        showAdminToast("Admin logged in successfully", "success");
+      } catch (err) {
+        showAdminToast(err.message || "Failed to log in as administrator", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>Access Control Center</span>`;
+      }
+    }
+
+    async function handleAdminLogout() {
+      try {
+        await auth.signOut();
+        showAdminToast("Logged out of admin panel");
+      } catch (err) {
+        showAdminToast("Error during logout", "error");
+      }
+    }
+
+    /* Auth State Listener */
+    auth.onAuthStateChanged((user) => {
+      currentAdmin = user;
+      if (user) {
+        document.getElementById('adminLoginView').classList.remove('active');
+        document.getElementById('adminMainView').classList.add('active');
+        document.getElementById('adminUserBadge').textContent = `Admin: ${user.email}`;
+        initAdminDataListeners();
+      } else {
+        document.getElementById('adminMainView').classList.remove('active');
+        document.getElementById('adminLoginView').classList.add('active');
+        adminPrompts = [];
+        adminCategories = {};
+      }
+    });
+
+    /* ============================================================
+       REALTIME DATABASE LISTENERS
+       ============================================================ */
+    function initAdminDataListeners() {
+      // 1. Listen for ALL Prompts
+      db.ref('prompts').on('value', (snapshot) => {
+        const data = snapshot.val();
+        adminPrompts = [];
+        if (data) {
+          Object.keys(data).forEach(id => {
+            adminPrompts.push({ id, ...data[id] });
+          });
+          // Sort newest first
+          adminPrompts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        }
+        updateDashboardStats();
+        renderAdminPromptsList();
+        renderDashboardRecentList();
+      });
+
+      // 2. Listen for Categories
+      db.ref('categories').on('value', (snapshot) => {
+        adminCategories = snapshot.val() || {};
+        updateDashboardStats();
+        renderCategorySelectOptions();
+        renderAdminCategoriesList();
+      });
+    }
+
+    /* Dashboard Metrics */
+    function updateDashboardStats() {
+      const total = adminPrompts.length;
+      const published = adminPrompts.filter(p => p.status === 'published' || p.isPublished === true).length;
+      const drafts = total - published;
+      
+      const customCatCount = Object.keys(adminCategories).length;
+      const totalCats = defaultPresetCategories.length + customCatCount;
+
+      document.getElementById('statTotalPrompts').textContent = total;
+      document.getElementById('statPublishedPrompts').textContent = published;
+      document.getElementById('statDraftPrompts').textContent = drafts;
+      document.getElementById('statTotalCategories').textContent = totalCats;
+    }
+
+    function renderDashboardRecentList() {
+      const container = document.getElementById('dashboardRecentList');
+      const recentFive = adminPrompts.slice(0, 5);
+
+      if (recentFive.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); font-size: 13.5px;">No prompts recorded yet. Click "Add Prompt" to create one.</p>`;
+        return;
+      }
+
+      container.innerHTML = recentFive.map(p => {
+        const isPub = p.status === 'published' || p.isPublished === true;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+            <div>
+              <div style="font-weight: 600; color: var(--text-dark);">${escapeHTML(p.title)}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${escapeHTML(p.category || 'General')}</div>
+            </div>
+            <span class="status-badge ${isPub ? 'status-published' : 'status-draft'}">${isPub ? 'Published' : 'Draft'}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ============================================================
+       TAB SWITCHING CONTROLLER
+       ============================================================ */
+    function switchAdminTab(tabName) {
+      document.querySelectorAll('.admin-tab-content').forEach(c => c.style.display = 'none');
+      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+
+      if (tabName === 'dashboard') {
+        document.getElementById('sectionDashboard').style.display = 'block';
+        document.getElementById('tabBtnDashboard').classList.add('active');
+      } else if (tabName === 'managePrompts') {
+        document.getElementById('sectionManagePrompts').style.display = 'block';
+        document.getElementById('tabBtnManagePrompts').classList.add('active');
+        renderAdminPromptsList();
+      } else if (tabName === 'addPrompt') {
+        document.getElementById('sectionAddPrompt').style.display = 'block';
+        document.getElementById('tabBtnAddPrompt').classList.add('active');
+      } else if (tabName === 'categories') {
+        document.getElementById('sectionCategories').style.display = 'block';
+        document.getElementById('tabBtnCategories').classList.add('active');
+      }
+      window.scrollTo(0, 0);
+    }
+
+    /* ============================================================
+       CATEGORY SELECT POPULATION
+       ============================================================ */
+    function renderCategorySelectOptions() {
+      const select = document.getElementById('promptCategorySelect');
+      const customNames = Object.values(adminCategories).map(c => typeof c === 'string' ? c : c.name).filter(Boolean);
+      const allUniqueCats = Array.from(new Set([...defaultPresetCategories, ...customNames]));
+
+      select.innerHTML = allUniqueCats.map(cat => `<option value="${escapeHTML(cat)}">${escapeHTML(cat)}</option>`).join('');
+    }
+
+    /* ============================================================
+       ADD / EDIT PROMPT (CRITICAL EXACT DATA STORAGE RULE)
+       Preserves prompt content, formatting, spaces, newlines exactly
+       ============================================================ */
+    async function handlePromptFormSave(e) {
+      e.preventDefault();
+      
+      const submitter = e.submitter;
+      const statusValue = submitter ? submitter.value : 'published';
+
+      const editId = document.getElementById('editPromptId').value;
+      const title = document.getElementById('promptTitleInput').value.trim();
+      
+      // CRITICAL: Read RAW exact value directly from textarea without modification
+      const promptContent = document.getElementById('promptContentInput').value;
+      const description = document.getElementById('promptDescInput').value.trim();
+      const category = document.getElementById('promptCategorySelect').value;
+      const imageUrl = document.getElementById('promptImageUrlInput').value.trim();
+      const rawTags = document.getElementById('promptTagsInput').value.trim();
+      
+      const tagsArray = rawTags 
+        ? rawTags.split(',').map(t => t.trim()).filter(Boolean) 
+        : [];
+
+      const promptData = {
+        title: title,
+        prompt: promptContent, // EXACT UNTOUCHED TEXT
+        description: description,
+        category: category,
+        imageUrl: imageUrl,
+        tags: tagsArray,
+        status: statusValue,
+        isPublished: statusValue === 'published',
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      try {
+        if (editId) {
+          // Update existing prompt
+          await db.ref(`prompts/${editId}`).update(promptData);
+          showAdminToast("Prompt updated successfully!", "success");
+        } else {
+          // Add new prompt
+          promptData.createdAt = firebase.database.ServerValue.TIMESTAMP;
+          await db.ref('prompts').push(promptData);
+          showAdminToast(statusValue === 'published' ? "Prompt published immediately!" : "Prompt saved as draft!", "success");
+        }
+
+        resetPromptForm();
+        switchAdminTab('managePrompts');
+      } catch (err) {
+        showAdminToast(err.message || "Failed to save prompt", "error");
+      }
+    }
+
+    function editPrompt(promptId) {
+      const item = adminPrompts.find(p => p.id === promptId);
+      if (!item) return;
+
+      document.getElementById('editPromptId').value = item.id;
+      document.getElementById('promptTitleInput').value = item.title || '';
+      
+      // Load exact content without modification
+      document.getElementById('promptContentInput').value = item.prompt || '';
+      document.getElementById('promptDescInput').value = item.description || '';
+      document.getElementById('promptCategorySelect').value = item.category || defaultPresetCategories[0];
+      document.getElementById('promptImageUrlInput').value = item.imageUrl || '';
+      
+      const tagsStr = Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '');
+      document.getElementById('promptTagsInput').value = tagsStr;
+
+      document.getElementById('promptFormTitle').textContent = "Edit AI Prompt";
+      document.getElementById('savePublishBtnText').textContent = "Update & Publish";
+      document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+
+      switchAdminTab('addPrompt');
+    }
+
+    function resetPromptForm() {
+      document.getElementById('editPromptId').value = '';
+      document.getElementById('promptEditorForm').reset();
+      document.getElementById('promptFormTitle').textContent = "Add New AI Prompt";
+      document.getElementById('savePublishBtnText').textContent = "Publish to Store";
+      document.getElementById('cancelEditBtn').style.display = 'none';
+    }
+
+    /* ============================================================
+       PROMPT MANAGEMENT LIST (SEARCH, STATUS TOGGLE, DELETE)
+       ============================================================ */
+    function handleAdminPromptSearch(val) {
+      promptSearchFilter = val.toLowerCase().trim();
+      renderAdminPromptsList();
+    }
+
+    function renderAdminPromptsList() {
+      const container = document.getElementById('adminPromptsListContainer');
+      const statusFilter = document.getElementById('adminStatusFilter').value;
+
+      const filtered = adminPrompts.filter(p => {
+        // Status filter
+        const isPub = p.status === 'published' || p.isPublished === true;
+        if (statusFilter === 'published' && !isPub) return false;
+        if (statusFilter === 'draft' && isPub) return false;
+
+        // Search text filter
+        if (!promptSearchFilter) return true;
+
+        const title = (p.title || '').toLowerCase();
+        const prompt = (p.prompt || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        const tags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : (p.tags || '').toLowerCase();
+
+        return title.includes(promptSearchFilter) ||
+               prompt.includes(promptSearchFilter) ||
+               desc.includes(promptSearchFilter) ||
+               cat.includes(promptSearchFilter) ||
+               tags.includes(promptSearchFilter);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+            <i class="fa-solid fa-folder-open" style="font-size: 36px; margin-bottom: 12px; color: var(--text-light);"></i>
+            <p>No matching prompts found.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const isPub = p.status === 'published' || p.isPublished === true;
+        return `
+          <div class="prompt-table-item">
+            <div class="prompt-item-info">
+              <div class="prompt-item-title">${escapeHTML(p.title || 'Untitled')}</div>
+              <div class="prompt-item-meta">
+                <span class="status-badge ${isPub ? 'status-published' : 'status-draft'}">${isPub ? 'Published' : 'Draft'}</span>
+                <span><i class="fa-solid fa-tag"></i> ${escapeHTML(p.category || 'General')}</span>
+                <span><i class="fa-regular fa-clock"></i> ${p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'Recent'}</span>
+              </div>
+            </div>
+            <div class="prompt-item-actions">
+              <button class="btn btn-outline btn-sm" onclick="togglePromptStatus('${p.id}', ${!isPub})" title="${isPub ? 'Unpublish' : 'Publish'}">
+                <i class="fa-solid ${isPub ? 'fa-eye-slash' : 'fa-check'}"></i> ${isPub ? 'Unpublish' : 'Publish'}
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="editPrompt('${p.id}')" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deletePrompt('${p.id}')" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function togglePromptStatus(promptId, shouldPublish) {
+      try {
+        await db.ref(`prompts/${promptId}`).update({
+          status: shouldPublish ? 'published' : 'draft',
+          isPublished: shouldPublish,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        showAdminToast(shouldPublish ? "Prompt published!" : "Prompt moved to draft!", "success");
+      } catch (err) {
+        showAdminToast("Status change failed", "error");
+      }
+    }
+
+    async function deletePrompt(promptId) {
+      if (!confirm("Are you sure you want to permanently delete this prompt? This action cannot be undone.")) {
+        return;
+      }
+      try {
+        await db.ref(`prompts/${promptId}`).remove();
+        showAdminToast("Prompt deleted permanently", "success");
+      } catch (err) {
+        showAdminToast("Failed to delete prompt", "error");
+      }
+    }
+
+    /* ============================================================
+       CATEGORY MANAGEMENT (ADD / DELETE)
+       ============================================================ */
+    async function handleCreateCategory(e) {
+      e.preventDefault();
+      const input = document.getElementById('newCategoryName');
+      const name = input.value.trim();
+      if (!name) return;
+
+      try {
+        await db.ref('categories').push({
+          name: name,
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        input.value = '';
+        showAdminToast("Category created successfully!", "success");
+      } catch (err) {
+        showAdminToast(err.message || "Failed to add category", "error");
+      }
+    }
+
+    function renderAdminCategoriesList() {
+      const container = document.getElementById('adminCategoriesList');
+      const entries = Object.entries(adminCategories);
+
+      if (entries.length === 0) {
+        container.innerHTML = `
+          <div style="font-size: 13px; color: var(--text-muted);">
+            No custom categories yet. Built-in defaults (ChatGPT, Gemini, etc.) remain automatically available.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = entries.map(([id, cat]) => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid #e2e8f0;">
+            <span style="font-weight: 600; color: var(--text-dark);">${escapeHTML(catName)}</span>
+            <button class="btn btn-outline btn-sm" style="color: #ef4444; padding: 4px 8px;" onclick="deleteCategory('${id}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deleteCategory(id) {
+      if (!confirm("Delete this category?")) return;
+      try {
+        await db.ref(`categories/${id}`).remove();
+        showAdminToast("Category removed", "success");
+      } catch (err) {
+        showAdminToast("Failed to delete category", "error");
+      }
+    }
+
+    /* Helper utility to sanitize HTML */
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
